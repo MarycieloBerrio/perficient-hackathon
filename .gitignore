@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production builds
+dist/
+build/
+*.tsbuildinfo
+
+# Environment variables
+.env
+
+# Logs
+npm-debug.log*
+*.log
+
+# Package manager
+package-lock.json
