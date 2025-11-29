@@ -1,0 +1,308 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+    --font-size: 16px;
+    /* Backgrounds - Tonos neutros profesionales */
+    --background: #0f1419;
+    --foreground: #e6edf3;
+    --card: #1a1f26;
+    --card-foreground: #e6edf3;
+    --popover: #22272e;
+    --popover-foreground: #e6edf3;
+    
+    /* Primary - Azul profesional */
+    --primary: #2563eb;
+    --primary-foreground: #ffffff;
+    
+    /* Secondary - Gris neutro */
+    --secondary: #4b5563;
+    --secondary-foreground: #ffffff;
+    
+    /* Muted - Tonos apagados neutros */
+    --muted: #22272e;
+    --muted-foreground: #9ca3af;
+    
+    /* Accent - Cyan discreto */
+    --accent: #0891b2;
+    --accent-foreground: #ffffff;
+    
+    /* Destructive - Rojo estándar */
+    --destructive: #dc2626;
+    --destructive-foreground: #ffffff;
+    
+    /* Warning - Ámbar corporativo */
+    --warning: #d97706;
+    --warning-foreground: #ffffff;
+    
+    /* Success - Verde corporativo */
+    --success: #059669;
+    --success-foreground: #ffffff;
+    
+    /* Borders y controles */
+    --border: rgba(99, 110, 123, 0.15);
+    --input: rgba(99, 110, 123, 0.08);
+    --input-background: #1a1f26;
+    --switch-background: #22272e;
+    --ring: rgba(37, 99, 235, 0.3);
+    
+    /* Charts - Colores profesionales para datos */
+    --chart-1: #2563eb;
+    --chart-2: #059669;
+    --chart-3: #d97706;
+    --chart-4: #0891b2;
+    --chart-5: #7c3aed;
+    
+    /* Configuración */
+    --font-weight-medium: 500;
+    --font-weight-normal: 400;
+    --radius: 0.375rem;
+    
+    /* Sidebar */
+    --sidebar: #1a1f26;
+    --sidebar-foreground: #e6edf3;
+    --sidebar-primary: #2563eb;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #22272e;
+    --sidebar-accent-foreground: #e6edf3;
+    --sidebar-border: rgba(99, 110, 123, 0.15);
+    --sidebar-ring: rgba(37, 99, 235, 0.3);
+}
+
+.dark {
+    /* Variante más oscura */
+    --background: #050810;
+    --card: #0f1420;
+    --muted: #141824;
+}
+
+/* Eliminar el @theme inline que causaba problemas */
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-mars-bg text-foreground antialiased;
+        color: #e5e7eb;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        @apply text-foreground;
+        color: #e5e7eb;
+    }
+
+    p, span, div {
+        color: inherit;
+    }
+}
+
+/**
+ * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
+ */
+@layer base {
+    :where(:not(:has([class*=' text-']), :not(:has([class^='text-'])))) {
+        h1 {
+            font-size: var(--text-2xl);
+            font-weight: var(--font-weight-medium);
+            line-height: 1.5;
+        }
+
+        h2 {
+            font-size: var(--text-xl);
+            font-weight: var(--font-weight-medium);
+            line-height: 1.5;
+        }
+
+        h3 {
+            font-size: var(--text-lg);
+            font-weight: var(--font-weight-medium);
+            line-height: 1.5;
+        }
+
+        h4 {
+            font-size: var(--text-base);
+            font-weight: var(--font-weight-medium);
+            line-height: 1.5;
+        }
+
+        p {
+            font-size: var(--text-base);
+            font-weight: var(--font-weight-normal);
+            line-height: 1.5;
+        }
+
+        label {
+            font-size: var(--text-base);
+            font-weight: var(--font-weight-medium);
+            line-height: 1.5;
+        }
+
+        button {
+            font-size: var(--text-base);
+            font-weight: var(--font-weight-medium);
+            line-height: 1.5;
+        }
+
+        input {
+            font-size: var(--text-base);
+            font-weight: var(--font-weight-normal);
+            line-height: 1.5;
+        }
+    }
+}
+
+html {
+    font-size: var(--font-size);
+}
+
+/* Estilos personalizados para scrollbar - tema profesional */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(99, 110, 123, 0.4) rgba(26, 31, 38, 0.5);
+}
+
+/* Para navegadores basados en WebKit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(26, 31, 38, 0.5);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(99, 110, 123, 0.4), rgba(75, 85, 99, 0.3));
+    border-radius: 4px;
+    border: 1px solid rgba(99, 110, 123, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(99, 110, 123, 0.6), rgba(75, 85, 99, 0.5));
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb:active {
+    background: linear-gradient(180deg, rgba(99, 110, 123, 0.8), rgba(75, 85, 99, 0.7));
+}
+
+/* Scrollbar para áreas específicas con más contraste */
+.overflow-y-auto::-webkit-scrollbar-thumb,
+.overflow-x-auto::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #636e7b, #4b5563);
+    opacity: 0.6;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover,
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    opacity: 0.8;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Animaciones personalizadas para jerarquía de alertas */
+@keyframes slide {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 20px 0;
+    }
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        opacity: 1;
+    }
+    50% {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        opacity: 0.9;
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+    20%, 40%, 60%, 80% { transform: translateX(2px); }
+}
+
+/* Clases de utilidad para jerarquía de alertas */
+.alert-critical {
+    animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+.alert-warning {
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.alert-shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+/* Estilos para controles interactivos */
+@layer components {
+    .control-nominal {
+        @apply opacity-70 hover:opacity-100 transition-opacity;
+    }
+
+    .control-ok {
+        @apply border-status-ok text-status-ok shadow-sm;
+    }
+
+    .control-warning {
+        @apply border-status-warning text-status-warning shadow-sm;
+    }
+
+    .control-critical {
+        @apply border-status-critical text-status-critical shadow-sm;
+    }
+
+    /* Efectos de feedback visual inmediato */
+    .feedback-instant {
+        @apply transition-all duration-150;
+    }
+
+    .feedback-active {
+        @apply scale-95 brightness-110;
+    }
+
+    /* Protección contra errores - estados bloqueados */
+    .control-locked {
+        @apply opacity-50 cursor-not-allowed grayscale;
+        pointer-events: none;
+    }
+
+    .control-locked::after {
+        content: '🔒';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 2rem;
+        opacity: 0.5;
+    }
+}
+
+/* Gradiente radial para efectos de glow */
+@layer utilities {
+    .bg-gradient-radial {
+        background: radial-gradient(circle, var(--tw-gradient-stops));
+    }
+}
+
+/* Mejoras de accesibilidad y claridad visual */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
