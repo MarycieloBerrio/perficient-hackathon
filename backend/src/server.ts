@@ -2,11 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import { env } from './config/env';
 import apiRouter from './routes';
+import { setupSwagger } from './config/swagger';
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+setupSwagger(app);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'mars-infrastructure-server' });
