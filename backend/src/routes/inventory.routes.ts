@@ -1,13 +1,16 @@
 import { Router } from 'express';
 import { InventoryController } from '../controllers/inventory.controller';
 
-export const inventoryRouter = Router();
-const controller = new InventoryController();
+const router = Router();
+const inventoryCtrl = new InventoryController();
 
-inventoryRouter.get('/dome/:domeId', (req, res, next) =>
-  controller.getByDome(req, res, next)
-);
+// Upsert inventory for a dome/resource pair
+router.put('/upsert', inventoryCtrl.upsertInventory.bind(inventoryCtrl));
 
-inventoryRouter.post('/transfer', (req, res, next) =>
-  controller.transfer(req, res, next)
-);
+// Inbound supply (IMPORT_EARTH logs)
+router.post('/inbound', inventoryCtrl.inbound.bind(inventoryCtrl));
+
+// Transfer between domes
+router.post('/transfer', inventoryCtrl.transfer.bind(inventoryCtrl));
+
+export default router;

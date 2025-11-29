@@ -1,15 +1,40 @@
+// src/controllers/inventory.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import { InventoryService } from '../services/inventory.service';
-import { inventoryTransferSchema } from '../models/inventory.models';
+import {
+  upsertInventorySchema,
+  inventoryInboundSchema,
+  inventoryTransferSchema,
+} from '../dtos';
 
-const service = new InventoryService();
+const inventoryService = new InventoryService();
 
 export class InventoryController {
-  async getByDome(req: Request, res: Response, next: NextFunction) {
+  async getInventoryByDome(req: Request, res: Response, next: NextFunction) {
     try {
       const { domeId } = req.params;
-      const data = await service.getInventoryByDome(domeId);
-      res.json(data);
+      const inventory = await inventoryService.getInventoryByDome(domeId);
+      res.json(inventory);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async upsertInventory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const input = upsertInventorySchema.parse(req.body);
+      const result = await inventoryService.upsertInventory(input);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async inbound(req: Request, res: Response, next: NextFunction) {
+    try {
+      const input = inventoryInboundSchema.parse(req.body);
+      const result = await inventoryService.receiveInbound(input);
+      res.status(201).json(result);
     } catch (err) {
       next(err);
     }
@@ -17,9 +42,9 @@ export class InventoryController {
 
   async transfer(req: Request, res: Response, next: NextFunction) {
     try {
-      const body = inventoryTransferSchema.parse(req.body);
-      const result = await service.transferResources(body);
-      res.status(201).json(result);
+      const input = inventoryTransferSchema.parse(req.body);
+      const result = await inventoryService.transferResources(input);
+      res.json(result);
     } catch (err) {
       next(err);
     }
