@@ -1,0 +1,33 @@
+.btn {
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 0.6em 1.2em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.25s;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background-color: #646cff;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: #535bf2;
+}
+
+.btn-secondary {
+    background-color: #1a1a1a;
+    color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    border-color: #646cff;
+}
