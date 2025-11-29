@@ -1,8 +1,8 @@
-import { Dome, DomeCategory, AlertStatus } from '../types';
+import { DomeCategory, AlertStatus } from '../types';
 
-// Categorías comunes para todos los domos
+// Common categories for all domes
 export const defaultCategories: DomeCategory[] = [
-    // 1. ECLSS - Sistema de Soporte Vital
+    // 1. ECLSS - Life Support System
     {
         id: 'eclss',
         name: 'Life Support (ECLSS)',
@@ -166,7 +166,7 @@ export const defaultCategories: DomeCategory[] = [
         ]
     },
     
-    // 2. ENERGÍA Y POTENCIA
+    // 2. ENERGY AND POWER
     {
         id: 'power',
         name: 'Energy & Power',
@@ -333,7 +333,7 @@ export const defaultCategories: DomeCategory[] = [
         ]
     },
 
-    // 3. SUMINISTROS E INVENTARIO
+    // 3. SUPPLIES AND INVENTORY
     {
         id: 'supplies',
         name: 'Supplies & Inventory',
@@ -417,7 +417,7 @@ export const defaultCategories: DomeCategory[] = [
         ]
     },
 
-    // 4. INFRAESTRUCTURA Y SEGURIDAD
+    // 4. INFRASTRUCTURE AND SECURITY
     {
         id: 'infrastructure',
         name: 'Infrastructure & Security',
@@ -523,7 +523,7 @@ export const defaultCategories: DomeCategory[] = [
         ]
     },
 
-    // 5. RECURSOS HUMANOS Y SALUD
+    // 5. HUMAN RESOURCES AND HEALTH
     {
         id: 'health',
         name: 'Human Resources & Health',
@@ -650,51 +650,6 @@ export const defaultCategories: DomeCategory[] = [
                 ]
             }
         ]
-    }
-];
-
-export const domes: Dome[] = [
-    {
-        id: 'dome-alpha',
-        name: 'Dome Alpha',
-        position: { x: 35, y: 45 },
-        status: 'ok' as AlertStatus,
-        population: 8,
-        systems: [
-            { name: 'Life Support', value: '98%', status: 'ok' as AlertStatus },
-            { name: 'Power', value: '450kW', status: 'ok' as AlertStatus },
-            { name: 'Structural', value: '100%', status: 'ok' as AlertStatus },
-            { name: 'Supplies', value: '85%', status: 'ok' as AlertStatus }
-        ],
-        categories: defaultCategories
-    },
-    {
-        id: 'dome-beta',
-        name: 'Dome Beta',
-        position: { x: 60, y: 55 },
-        status: 'warning' as AlertStatus,
-        population: 6,
-        systems: [
-            { name: 'Life Support', value: '85%', status: 'warning' as AlertStatus },
-            { name: 'Power', value: '320kW', status: 'ok' as AlertStatus },
-            { name: 'Structural', value: '95%', status: 'ok' as AlertStatus },
-            { name: 'Supplies', value: '72%', status: 'warning' as AlertStatus }
-        ],
-        categories: defaultCategories
-    },
-    {
-        id: 'dome-gamma',
-        name: 'Dome Gamma',
-        position: { x: 45, y: 70 },
-        status: 'critical' as AlertStatus,
-        population: 4,
-        systems: [
-            { name: 'Life Support', value: '45%', status: 'critical' as AlertStatus },
-            { name: 'Power', value: '150kW', status: 'warning' as AlertStatus },
-            { name: 'Structural', value: '60%', status: 'critical' as AlertStatus },
-            { name: 'Supplies', value: '38%', status: 'critical' as AlertStatus }
-        ],
-        categories: defaultCategories
     }
 ];
 

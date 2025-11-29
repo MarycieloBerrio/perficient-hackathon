@@ -1,14 +1,15 @@
-// Context para manejar el estado global de la colonia Mars
+// Context to manage global state of the Mars colony
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { Dome } from '../types';
 import type { ApiInventory, ApiSensor, ApiAlert, ApiTelemetryReading } from '../types/backend';
-import * as api from '../services/api';
+import * as dataService from '../services/dataService';
 import { mapDomeToUI } from '../utils/dataMapper';
 import { usePolling } from '../hooks/usePolling';
 import { POLLING_INTERVALS, LOCAL_STORAGE_KEYS } from '../config/constants';
+import toast from 'react-hot-toast';
 
 interface ColonyContextValue {
-  // Estado
+  // State
   domes: Dome[];
   inventory: Record<string, ApiInventory[]>;
   sensors: Record<string, ApiSensor[]>;
@@ -18,7 +19,7 @@ interface ColonyContextValue {
   isLoading: boolean;
   error: string | null;
 
-  // Acciones
+  // Actions
   refreshDomes: () => Promise<void>;
   refreshInventory: (domeId: string) => Promise<void>;
   refreshSensors: (domeId: string) => Promise<void>;
@@ -35,7 +36,7 @@ interface ColonyProviderProps {
 }
 
 export function ColonyProvider({ children }: ColonyProviderProps) {
-  // Estado principal
+  // Main state
   const [domes, setDomes] = useState<Dome[]>([]);
   const [inventory, setInventory] = useState<Record<string, ApiInventory[]>>({});
   const [sensors, setSensors] = useState<Record<string, ApiSensor[]>>({});
@@ -45,7 +46,7 @@ export function ColonyProvider({ children }: ColonyProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Cargar estados de controles desde localStorage
+  // Load control states from localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.CONTROL_STATES);
@@ -53,42 +54,41 @@ export function ColonyProvider({ children }: ColonyProviderProps) {
         setControlStates(JSON.parse(saved));
       }
     } catch (err) {
-      console.error('Error cargando estados de controles:', err);
+      console.error('Error loading control states:', err);
     }
   }, []);
 
-  // Guardar estados de controles en localStorage cuando cambien
+  // Save control states to localStorage when they change
   useEffect(() => {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEYS.CONTROL_STATES, JSON.stringify(controlStates));
     } catch (err) {
-      console.error('Error guardando estados de controles:', err);
+      console.error('Error saving control states:', err);
     }
   }, [controlStates]);
 
-  // ========== Funciones de refresh ==========
+  // ========== Refresh functions ==========
 
   const refreshDomes = useCallback(async () => {
     try {
       setError(null);
-      const apiDomes = await api.getDomes();
+      const apiDomes = await dataService.getDomes();
       
-      // Cargar inventario y sensores para cada domo
       const domesWithData = await Promise.all(
         apiDomes.map(async (apiDome) => {
           try {
             const [domeInventory, domeSensors] = await Promise.all([
-              api.getDomeInventory(apiDome.id).catch(() => []),
-              api.getDomeSensors(apiDome.id).catch(() => []),
+              dataService.getDomeInventory(apiDome.id).catch(() => []),
+              dataService.getDomeSensors(apiDome.id).catch(() => []),
             ]);
 
-            // Actualizar el estado de inventario y sensores
             setInventory(prev => ({ ...prev, [apiDome.id]: domeInventory }));
             setSensors(prev => ({ ...prev, [apiDome.id]: domeSensors }));
 
-            return mapDomeToUI(apiDome, domeInventory, domeSensors, alerts);
+            const mappedDome = mapDomeToUI(apiDome, domeInventory, domeSensors, alerts);
+            return mappedDome;
           } catch (err) {
-            console.error(`Error cargando datos para domo ${apiDome.id}:`, err);
+            console.error(`Error loading data for dome ${apiDome.id}:`, err);
             return mapDomeToUI(apiDome, [], [], alerts);
           }
         })
@@ -97,80 +97,120 @@ export function ColonyProvider({ children }: ColonyProviderProps) {
       setDomes(domesWithData);
       setIsLoading(false);
     } catch (err) {
-      console.error('Error cargando domos:', err);
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      console.error('Error loading domes:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
       setIsLoading(false);
     }
   }, [alerts]);
 
   const refreshInventory = useCallback(async (domeId: string) => {
     try {
-      const domeInventory = await api.getDomeInventory(domeId);
+      const domeInventory = await dataService.getDomeInventory(domeId);
       setInventory(prev => ({ ...prev, [domeId]: domeInventory }));
     } catch (err) {
-      console.error(`Error cargando inventario para domo ${domeId}:`, err);
+      console.error(`Error loading inventory for dome ${domeId}:`, err);
     }
   }, []);
 
   const refreshSensors = useCallback(async (domeId: string) => {
     try {
-      const domeSensors = await api.getDomeSensors(domeId);
+      const domeSensors = await dataService.getDomeSensors(domeId);
       setSensors(prev => ({ ...prev, [domeId]: domeSensors }));
     } catch (err) {
-      console.error(`Error cargando sensores para domo ${domeId}:`, err);
+      console.error(`Error loading sensors for dome ${domeId}:`, err);
     }
   }, []);
 
   const refreshAlerts = useCallback(async () => {
     try {
-      const activeAlerts = await api.getAlerts({ onlyActive: true });
+      const activeAlerts = await dataService.getAlerts({ onlyActive: true });
       setAlerts(activeAlerts);
     } catch (err) {
-      console.error('Error cargando alertas:', err);
+      console.error('Error loading alerts:', err);
     }
   }, []);
 
   const refreshTelemetry = useCallback(async (sensorId: string) => {
     try {
-      const latest = await api.getLatestTelemetry(sensorId);
+      const latest = await dataService.getLatestTelemetry(sensorId);
       setTelemetry(prev => ({ ...prev, [sensorId]: latest }));
     } catch (err) {
-      console.error(`Error cargando telemetría para sensor ${sensorId}:`, err);
+      // Don't show error, as we now always return mock data in case of failure
+      console.debug(`Telemetry for sensor ${sensorId} loaded from fallback`);
     }
   }, []);
 
   const acknowledgeAlert = useCallback(async (alertId: string, operator: string) => {
+    const toastId = toast.loading('Acknowledging alert...');
+    
     try {
-      await api.acknowledgeAlert(alertId, { acknowledgedBy: operator });
+      await dataService.acknowledgeAlert(alertId, operator);
       await refreshAlerts();
+      
+      toast.success('Alert acknowledged successfully', {
+        id: toastId,
+        duration: 3000,
+        style: {
+          background: '#1a2332',
+          color: '#fff',
+          border: '1px solid #10b981',
+          borderRadius: '8px',
+          padding: '12px 16px',
+        },
+      });
     } catch (err) {
-      console.error(`Error al acknowledging alerta ${alertId}:`, err);
+      console.error(`Error acknowledging alert ${alertId}:`, err);
+      toast.error('Failed to acknowledge alert', {
+        id: toastId,
+        duration: 4000,
+        style: {
+          background: '#1a2332',
+          color: '#fff',
+          border: '1px solid #ef4444',
+          borderRadius: '8px',
+          padding: '12px 16px',
+        },
+      });
       throw err;
     }
   }, [refreshAlerts]);
 
   const updateControlState = useCallback((controlId: string, value: any) => {
-    setControlStates(prev => ({
-      ...prev,
-      [controlId]: value,
-    }));
+    try {
+      setControlStates(prev => ({
+        ...prev,
+        [controlId]: value,
+      }));
+    } catch (err) {
+      console.error(`Error updating control state for ${controlId}:`, err);
+      toast.error(`Failed to update control: ${controlId}`, {
+        duration: 3000,
+        style: {
+          background: '#1a2332',
+          color: '#fff',
+          border: '1px solid #ef4444',
+          borderRadius: '8px',
+          padding: '12px 16px',
+        },
+      });
+    }
   }, []);
 
-  // ========== Polling para datos en tiempo real ==========
+  // ========== Polling for real-time data ==========
 
-  // Cargar datos iniciales
+  // Load initial data
   useEffect(() => {
     refreshDomes();
     refreshAlerts();
   }, []);
 
-  // Polling para alertas
+  // Polling for alerts
   usePolling(refreshAlerts, {
     interval: POLLING_INTERVALS.ALERTS,
     enabled: !isLoading,
   });
 
-  // Polling para telemetría de todos los sensores conocidos
+  // Polling for telemetry from all known sensors
   usePolling(
     async () => {
       const allSensors = Object.values(sensors).flat();
@@ -184,7 +224,7 @@ export function ColonyProvider({ children }: ColonyProviderProps) {
     }
   );
 
-  // Polling para actualizar sensores
+  // Polling to update sensors
   usePolling(
     async () => {
       await Promise.all(
@@ -197,7 +237,7 @@ export function ColonyProvider({ children }: ColonyProviderProps) {
     }
   );
 
-  // Polling para inventario
+  // Polling for inventory
   usePolling(
     async () => {
       await Promise.all(
@@ -210,21 +250,22 @@ export function ColonyProvider({ children }: ColonyProviderProps) {
     }
   );
 
-  // Re-mapear domos cuando cambien las dependencias
-  useEffect(() => {
-    if (domes.length > 0) {
-      const remappedDomes = domes.map(dome => {
-        const domeInventory = inventory[dome.id] || [];
-        const domeSensors = sensors[dome.id] || [];
-        
-        // Buscar el apiDome original
-        api.getDome(dome.id).then(apiDome => {
-          const updated = mapDomeToUI(apiDome, domeInventory, domeSensors, alerts);
-          setDomes(prev => prev.map(d => d.id === dome.id ? updated : d));
-        }).catch(console.error);
-      });
-    }
-  }, [inventory, sensors, alerts]);
+  // Re-map domes when dependencies change
+  // TEMPORARILY DISABLED - may be causing problems with positions
+  // useEffect(() => {
+  //   if (domes.length > 0) {
+  //     domes.forEach(dome => {
+  //       const domeInventory = inventory[dome.id] || [];
+  //       const domeSensors = sensors[dome.id] || [];
+  //       
+  //       // Find the original apiDome
+  //       dataService.getDome(dome.id).then(apiDome => {
+  //         const updated = mapDomeToUI(apiDome, domeInventory, domeSensors, alerts);
+  //         setDomes(prev => prev.map(d => d.id === dome.id ? updated : d));
+  //       }).catch(console.error);
+  //     });
+  //   }
+  // }, [inventory, sensors, alerts]);
 
   const value: ColonyContextValue = {
     domes,
@@ -254,7 +295,7 @@ export function ColonyProvider({ children }: ColonyProviderProps) {
 export function useColony() {
   const context = useContext(ColonyContext);
   if (context === undefined) {
-    throw new Error('useColony debe usarse dentro de un ColonyProvider');
+    throw new Error('useColony must be used within a ColonyProvider');
   }
   return context;
 }

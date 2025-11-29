@@ -3,10 +3,13 @@ import { MapPanel } from './components/MapPanel';
 import { DomeCategoryPanel } from './components/DomeCategoryPanel';
 import { DomeControlPanel } from './components/DomeControlPanel';
 import { AlertsPanel } from './components/AlertsPanel';
+import { AresLogo } from './components/AresLogo';
 import { Dome, DomeCategory } from './types';
 import { clsx } from 'clsx';
 import { Globe, Clock, ArrowLeft, AlertTriangle, CheckCircle, Bell } from 'lucide-react';
 import { useColony } from './context/ColonyContext';
+import { Toaster } from 'react-hot-toast';
+import { useToast } from './hooks/useToast';
 
 /**
  * Main application component for Mars Dome Control System
@@ -29,6 +32,7 @@ export default function App() {
     const [selectedCategory, setSelectedCategory] = useState<DomeCategory | null>(null);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [showAlerts, setShowAlerts] = useState(false);
+    const toast = useToast();
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), CLOCK_UPDATE_INTERVAL_MS);
@@ -53,8 +57,30 @@ export default function App() {
     };
 
     const handleControlChange = (controlId: string, value: any) => {
-        console.log(`Control ${controlId} changed to:`, value);
-        updateControlState(controlId, value);
+        try {
+            updateControlState(controlId, value);
+            
+            // Show confirmation toast
+            const controlName = controlId.split('-').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
+            
+            // Format value for toast
+            let displayValue = value;
+            if (typeof value === 'boolean') {
+                displayValue = value ? 'ON' : 'OFF';
+            } else if (typeof value === 'number') {
+                displayValue = value.toFixed(1);
+            }
+            
+            toast.success(`${controlName}: ${displayValue}`, {
+                duration: 2000,
+            });
+        } catch (error) {
+            toast.error('Error updating control', {
+                duration: 3000,
+            });
+        }
     };
 
     const getGlobalStatus = () => {
@@ -73,8 +99,12 @@ export default function App() {
         return (
             <div className="h-screen flex items-center justify-center bg-mars-bg">
                 <div className="text-center">
+                    <div className="mb-8 flex justify-center">
+                        <AresLogo size="large" showSubtitle={true} />
+                    </div>
                     <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-gray-400">Cargando datos de la colonia...</p>
+                    <p className="text-gray-400 font-medium">Initializing system...</p>
+                    <p className="text-xs text-gray-500 mt-2">Loading colony data</p>
                 </div>
             </div>
         );
@@ -82,6 +112,7 @@ export default function App() {
 
     return (
         <div className="h-screen flex flex-col bg-mars-bg">
+            <Toaster />
             <AlertsPanel isOpen={showAlerts} onClose={() => setShowAlerts(false)} />
             <header className={clsx(
                 "h-16 border-b border-mars-border backdrop-blur-sm px-6 flex items-center justify-between",
@@ -97,22 +128,18 @@ export default function App() {
                                 <ArrowLeft className="w-5 h-5" />
                             </button>
                             <div>
-                                <h1 className="text-lg font-semibold leading-none text-foreground">{selectedDome.name}</h1>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-primary font-bold tracking-wider">ARES</span>
+                                    <span className="text-gray-600">|</span>
+                                    <h1 className="text-lg font-semibold leading-none text-foreground">{selectedDome.name}</h1>
+                                </div>
                                 <span className="text-xs text-gray-400">
                                     Population: {selectedDome.population} • Status: {selectedDome.status.toUpperCase()}
                                 </span>
                             </div>
                         </>
                     ) : (
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center text-white font-semibold text-xl shadow-sm">
-                                M
-                            </div>
-                            <div>
-                                <h1 className="text-lg font-semibold leading-none text-foreground">Mars Control</h1>
-                                <span className="text-xs text-gray-400">Olympus Base</span>
-                            </div>
-                        </div>
+                        <AresLogo size="medium" showSubtitle={true} />
                     )}
                 </div>
 
@@ -145,7 +172,7 @@ export default function App() {
                     >
                         <Bell className="w-4 h-4" />
                         <span className="font-medium text-sm">
-                            {activeAlerts.length > 0 ? `${activeAlerts.length} Alertas` : 'Sin Alertas'}
+                            {activeAlerts.length > 0 ? `${activeAlerts.length} Alerts` : 'No Alerts'}
                         </span>
                         {activeAlerts.length > 0 && (
                             <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 rounded-full text-xs text-white flex items-center justify-center font-bold">

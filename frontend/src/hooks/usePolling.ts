@@ -1,4 +1,4 @@
-// Hook para polling automático de datos en tiempo real
+// Hook for automatic real-time data polling
 import { useEffect, useRef } from 'react';
 
 interface UsePollingOptions {
@@ -8,9 +8,9 @@ interface UsePollingOptions {
 }
 
 /**
- * Hook personalizado para ejecutar una función de forma periódica (polling)
- * @param callback - Función a ejecutar periódicamente
- * @param options - Opciones de configuración del polling
+ * Custom hook to execute a function periodically (polling)
+ * @param callback - Function to execute periodically
+ * @param options - Polling configuration options
  */
 export function usePolling(
   callback: () => Promise<void> | void,
@@ -20,13 +20,13 @@ export function usePolling(
   const savedCallback = useRef(callback);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Actualizar el callback guardado cuando cambie
+  // Update saved callback when it changes
   useEffect(() => {
     savedCallback.current = callback;
   }, [callback]);
 
   useEffect(() => {
-    // Si el polling está deshabilitado, no hacer nada
+    // If polling is disabled, do nothing
     if (!enabled) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -35,25 +35,25 @@ export function usePolling(
       return;
     }
 
-    // Ejecutar inmediatamente la primera vez
+    // Execute immediately the first time
     const executeCallback = async () => {
       try {
         await savedCallback.current();
       } catch (error) {
-        console.error('Error en polling:', error);
+        console.error('Error in polling:', error);
         if (onError && error instanceof Error) {
           onError(error);
         }
       }
     };
 
-    // Ejecutar callback inmediatamente
+    // Execute callback immediately
     executeCallback();
 
-    // Configurar interval para ejecuciones periódicas
+    // Set up interval for periodic executions
     intervalRef.current = setInterval(executeCallback, interval);
 
-    // Cleanup: limpiar el interval cuando el componente se desmonte o cambien las dependencias
+    // Cleanup: clear the interval when component unmounts or dependencies change
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);

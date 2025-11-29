@@ -3,6 +3,7 @@ import { clsx } from 'clsx';
 import { ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useColony } from '../context/ColonyContext';
+import { useToast } from '../hooks/useToast';
 
 // Import control components
 import { SliderControl } from './atoms/controls/SliderControl';
@@ -24,38 +25,27 @@ interface DomeControlPanelProps {
 export function DomeControlPanel({ category, onControlChange }: DomeControlPanelProps) {
     const [expandedSystems, setExpandedSystems] = useState<string[]>([]);
     const { telemetry, controlStates } = useColony();
+    const toast = useToast();
     
-    // Actualizar valores de controles desde telemetría
-    useEffect(() => {
-        if (!category) return;
+    // Function to get the current value of a control
+    // Priority: 1. controlStates (user changes), 2. telemetry (sensor data), 3. default value
+    const getControlValue = (control: Control): any => {
+        // If there's a saved user state, use it
+        if (controlStates[control.id] !== undefined) {
+            return controlStates[control.id];
+        }
         
-        // Recorrer sistemas y actualizar controles con datos de telemetría
-        category.systems.forEach(system => {
-            system.subsystems.forEach(subsystem => {
-                // Actualizar commander control
-                updateControlWithTelemetry(subsystem.commanderControl);
-                // Actualizar engineer control si existe
-                if (subsystem.engineerControl) {
-                    updateControlWithTelemetry(subsystem.engineerControl);
-                }
-            });
-        });
-    }, [category, telemetry]);
-
-    const updateControlWithTelemetry = (control: Control) => {
-        // Si el control es un sensor, actualizar su valor desde telemetría
+        // If the control is a sensor, use telemetry
         if (control.id.startsWith('sensor-')) {
             const sensorId = control.id.replace('sensor-', '');
             const reading = telemetry[sensorId];
             if (reading && typeof control.value === 'number') {
-                control.value = reading.value;
+                return reading.value;
             }
         }
         
-        // Si el control tiene un estado guardado, usarlo
-        if (controlStates[control.id] !== undefined) {
-            control.value = controlStates[control.id];
-        }
+        // Use the default value
+        return control.value;
     };
 
     const toggleSystem = (systemId: string) => {
@@ -67,11 +57,32 @@ export function DomeControlPanel({ category, onControlChange }: DomeControlPanel
     };
 
     const renderControl = (control: Control, level: 'commander' | 'engineer') => {
+        // Get the current control value (may come from telemetry or controlStates)
+        const currentValue = getControlValue(control);
+        
+        // Special handler for critical controls
+        const handleCriticalChange = (controlId: string, value: any) => {
+            // Show special toast for critical actions
+            if (control.critical) {
+                if (control.type === 'safety-toggle' || control.type === 'push-button') {
+                    const actionName = control.label;
+                    
+                    if (value) {
+                        toast.warning(`⚠️ CRITICAL: ${actionName} ACTIVATED`, {
+                            duration: 5000,
+                        });
+                    }
+                }
+            }
+            
+            onControlChange(controlId, value);
+        };
+        
         const commonProps = {
             id: control.id,
             status: control.status,
             locked: control.locked,
-            onChange: (value: any) => onControlChange(control.id, value)
+            onChange: (value: any) => handleCriticalChange(control.id, value)
         };
 
         switch (control.type) {
@@ -80,7 +91,7 @@ export function DomeControlPanel({ category, onControlChange }: DomeControlPanel
                     <SliderControl
                         {...commonProps}
                         label={control.label}
-                        value={control.value as number}
+                        value={currentValue as number}
                         min={control.min!}
                         max={control.max!}
                         step={control.step!}
@@ -95,7 +106,7 @@ export function DomeControlPanel({ category, onControlChange }: DomeControlPanel
                         {...commonProps}
                         label={control.label}
                         description={control.description}
-                        value={control.value as boolean}
+                        value={currentValue as boolean}
                         critical={control.critical}
                         requiresConfirmation={control.requiresConfirmation}
                     />
@@ -106,7 +117,7 @@ export function DomeControlPanel({ category, onControlChange }: DomeControlPanel
                     <KnobControl
                         {...commonProps}
                         label={control.label}
-                        value={control.value as number}
+                        value={currentValue as number}
                         min={control.min!}
                         max={control.max!}
                         unit={control.unit}
@@ -118,7 +129,7 @@ export function DomeControlPanel({ category, onControlChange }: DomeControlPanel
                     <RadioButtonGroup
                         {...commonProps}
                         label={control.label}
-                        value={control.value as string}
+                        value={currentValue as string}
                         options={control.options!}
                     />
                 );
@@ -128,7 +139,7 @@ export function DomeControlPanel({ category, onControlChange }: DomeControlPanel
                     <VerticalSlider
                         {...commonProps}
                         label={control.label}
-                        value={control.value as number}
+                        value={currentValue as number}
                         min={control.min!}
                         max={control.max!}
                         step={control.step!}
@@ -141,7 +152,7 @@ export function DomeControlPanel({ category, onControlChange }: DomeControlPanel
                     <StepperInput
                         {...commonProps}
                         label={control.label}
-                        value={control.value as number}
+                        value={currentValue as number}
                         min={control.min!}
                         max={control.max!}
                         step={control.step!}
@@ -166,7 +177,7 @@ export function DomeControlPanel({ category, onControlChange }: DomeControlPanel
                     <ProgressBarControl
                         {...commonProps}
                         label={control.label}
-                        value={control.value as number}
+                        value={currentValue as number}
                         min={control.min!}
                         max={control.max!}
                         unit={control.unit}
@@ -181,7 +192,15 @@ export function DomeControlPanel({ category, onControlChange }: DomeControlPanel
                         description={control.description}
                         critical={control.critical}
                         requiresConfirmation={control.requiresConfirmation}
-                        onPress={() => onControlChange(control.id, true)}
+                        onPress={() => {
+                            handleCriticalChange(control.id, true);
+                            // Additional toast for action buttons
+                            if (!control.critical) {
+                                toast.info(`📡 ${control.label} dispatched`, {
+                                    duration: 2500,
+                                });
+                            }
+                        }}
                     />
                 );
 
@@ -190,7 +209,7 @@ export function DomeControlPanel({ category, onControlChange }: DomeControlPanel
                     <JoystickControl
                         {...commonProps}
                         label={control.label}
-                        value={control.value as number}
+                        value={currentValue as number}
                         min={control.min!}
                         max={control.max!}
                         unit={control.unit}

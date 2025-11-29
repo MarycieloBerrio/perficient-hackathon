@@ -1,12 +1,12 @@
-// Configuración de la aplicación Mars Colony Control
+// Mars Colony Control application configuration
 
 export const API_BASE_URL = 'http://localhost:3000/api';
 
 export const POLLING_INTERVALS = {
-  TELEMETRY: 5000, // 5 segundos
-  ALERTS: 5000, // 5 segundos
-  SENSORS: 10000, // 10 segundos
-  INVENTORY: 15000, // 15 segundos
+  TELEMETRY: 5000, // 5 seconds
+  ALERTS: 5000, // 5 seconds
+  SENSORS: 10000, // 10 seconds
+  INVENTORY: 15000, // 15 seconds
 } as const;
 
 export const LOCAL_STORAGE_KEYS = {

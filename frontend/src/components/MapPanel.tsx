@@ -71,7 +71,7 @@ export function MapPanel({ domes, selectedDomeId, onDomeSelect, marsImageUrl, fu
 
             <div className="absolute inset-0 bg-[linear-gradient(rgba(99,110,123,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(99,110,123,0.06)_1px,transparent_1px)] bg-[size:100px_100px]" />
 
-            {domes.map(dome => {
+            {domes.map((dome, index) => {
                 const colors = STATUS_COLORS[dome.status];
 
                 return (
@@ -79,7 +79,11 @@ export function MapPanel({ domes, selectedDomeId, onDomeSelect, marsImageUrl, fu
                         key={dome.id}
                         onClick={() => onDomeSelect(dome)}
                         className="absolute transform -translate-x-1/2 -translate-y-1/2 group/marker z-20"
-                        style={{ left: `${dome.position.x}%`, top: `${dome.position.y}%` }}
+                        style={{ 
+                            left: `${dome.position.x}%`, 
+                            top: `${dome.position.y}%`,
+                            zIndex: 20 + index
+                        }}
                     >
                         {dome.status === 'critical' && (
                             <div className="absolute inset-0 rounded-full animate-ping opacity-20 bg-status-critical" />
@@ -117,20 +121,6 @@ export function MapPanel({ domes, selectedDomeId, onDomeSelect, marsImageUrl, fu
                                 <span>{dome.systems.filter(s => s.status === 'ok').length}/{dome.systems.length} OK</span>
                             </div>
                         </div>
-
-                        {fullscreen && dome.id === 'dome-alpha' && (
-                            <svg className="absolute top-1/2 left-1/2 pointer-events-none" style={{ width: '25vw', height: '10vh' }}>
-                                <line 
-                                    x1="0" 
-                                    y1="0" 
-                                    x2="100%" 
-                                    y2="100%" 
-                                    stroke="rgba(99,110,123,0.3)" 
-                                    strokeWidth="1.5" 
-                                    strokeDasharray="5,5"
-                                />
-                            </svg>
-                        )}
                     </button>
                 );
             })}

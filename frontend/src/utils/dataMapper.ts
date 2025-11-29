@@ -1,10 +1,10 @@
-// Funciones para mapear datos del backend a la estructura de UI
+// Functions to map backend data to UI structure
 import type { ApiDome, ApiInventory, ApiSensor, ApiAlert } from '../types/backend';
 import type { Dome, AlertStatus, DomeCategory, Control } from '../types';
 import { defaultCategories } from '../data/domeControlData';
 
 /**
- * Mapea el nivel de alerta del backend al tipo AlertStatus de la UI
+ * Maps backend alert level to UI AlertStatus type
  */
 export function mapAlertLevel(alertLevel: number): AlertStatus {
   if (alertLevel >= 3) return 'critical';
@@ -13,7 +13,7 @@ export function mapAlertLevel(alertLevel: number): AlertStatus {
 }
 
 /**
- * Mapea el nivel de alerta del API al tipo AlertStatus
+ * Maps API alert level to AlertStatus type
  */
 export function mapApiAlertLevel(level: string): AlertStatus {
   const normalized = level.toUpperCase();
@@ -23,7 +23,7 @@ export function mapApiAlertLevel(level: string): AlertStatus {
 }
 
 /**
- * Calcula el status basado en el threshold de un recurso
+ * Calculates status based on resource threshold
  */
 export function calculateResourceStatus(
   quantity: number,
@@ -38,7 +38,7 @@ export function calculateResourceStatus(
 }
 
 /**
- * Mapea un domo del backend a la estructura de UI
+ * Maps a backend dome to UI structure
  */
 export function mapDomeToUI(
   apiDome: ApiDome,
@@ -46,7 +46,6 @@ export function mapDomeToUI(
   sensors: ApiSensor[] = [],
   alerts: ApiAlert[] = []
 ): Dome {
-  // Calcular el status global basado en alertas activas
   const domeAlerts = alerts.filter(a => a.dome_id === apiDome.id && a.is_active);
   const hasCritical = domeAlerts.some(a => a.level === 'CRITICAL');
   const hasWarning = domeAlerts.some(a => a.level === 'WARNING');
@@ -55,16 +54,13 @@ export function mapDomeToUI(
   if (hasCritical) globalStatus = 'critical';
   else if (hasWarning && globalStatus === 'ok') globalStatus = 'warning';
 
-  // Calcular sistemas básicos desde el inventario
   const vitalResources = inventory.filter(inv => inv.resources.is_vital);
   const lifeSupportStatus = calculateLifeSupportStatus(vitalResources);
   const suppliesStatus = calculateSuppliesStatus(inventory);
   
-  // Calcular potencia desde sensores
   const powerSensors = sensors.filter(s => s.category === 'POWER');
   const powerStatus = calculatePowerStatus(powerSensors);
 
-  // Enriquecer las categorías con datos del backend
   const enrichedCategories = enrichCategoriesWithBackendData(
     defaultCategories,
     inventory,
@@ -88,7 +84,7 @@ export function mapDomeToUI(
 }
 
 /**
- * Enriquece las categorías con datos reales del backend
+ * Enriches categories with real backend data
  */
 function enrichCategoriesWithBackendData(
   categories: DomeCategory[],
@@ -96,10 +92,8 @@ function enrichCategoriesWithBackendData(
   sensors: ApiSensor[]
 ): DomeCategory[] {
   return categories.map(category => {
-    // Clonar la categoría para no mutar el original
     const enrichedCategory = JSON.parse(JSON.stringify(category)) as DomeCategory;
 
-    // Inyectar recursos de inventario en las categorías apropiadas
     if (category.id === 'eclss') {
       enrichedCategory.systems = injectLifeSupportResources(category.systems, inventory, sensors);
     } else if (category.id === 'power') {
@@ -108,7 +102,6 @@ function enrichCategoriesWithBackendData(
       enrichedCategory.systems = injectSupplyResources(category.systems, inventory);
     }
 
-    // Actualizar el status de la categoría basado en sus sistemas
     enrichedCategory.status = calculateCategoryStatus(enrichedCategory.systems);
 
     return enrichedCategory;
@@ -116,38 +109,40 @@ function enrichCategoriesWithBackendData(
 }
 
 /**
- * Inyecta recursos de soporte vital en los sistemas ECLSS
+ * Injects life support resources into ECLSS systems
  */
 function injectLifeSupportResources(systems: any[], inventory: ApiInventory[], sensors: ApiSensor[]): any[] {
   const enrichedSystems = [...systems];
 
-  // Buscar recursos vitales
   const oxygenResource = inventory.find(inv => inv.resources.code === 'OXYGEN' || inv.resources.code === 'O2');
   const waterResource = inventory.find(inv => inv.resources.code === 'WATER');
-
-  // Inyectar sensor de oxígeno si existe
   const oxygenSensor = sensors.find(s => s.category === 'LIFE_SUPPORT' && s.code.includes('O2'));
   
   if (oxygenResource || oxygenSensor) {
-    // Encontrar el sistema de atmósfera y agregar control de progreso
     const atmosphereSystem = enrichedSystems.find(s => s.id === 'atmosphere');
     if (atmosphereSystem && oxygenResource) {
-      atmosphereSystem.subsystems.push({
-        id: 'oxygen-level',
-        name: 'Oxygen Level',
-        commanderControl: createResourceProgressControl(oxygenResource),
-      });
+      const existingSubsystem = atmosphereSystem.subsystems.find((sub: any) => sub.id === 'oxygen-level');
+      if (!existingSubsystem) {
+        atmosphereSystem.subsystems.push({
+          id: 'oxygen-level',
+          name: 'Oxygen Level',
+          commanderControl: createResourceProgressControl(oxygenResource),
+        });
+      }
     }
   }
 
   if (waterResource) {
     const waterSystem = enrichedSystems.find(s => s.id === 'water');
     if (waterSystem) {
-      waterSystem.subsystems.push({
-        id: 'water-level',
-        name: 'Water Level',
-        commanderControl: createResourceProgressControl(waterResource),
-      });
+      const existingSubsystem = waterSystem.subsystems.find((sub: any) => sub.id === 'water-level');
+      if (!existingSubsystem) {
+        waterSystem.subsystems.push({
+          id: 'water-level',
+          name: 'Water Level',
+          commanderControl: createResourceProgressControl(waterResource),
+        });
+      }
     }
   }
 
@@ -155,23 +150,33 @@ function injectLifeSupportResources(systems: any[], inventory: ApiInventory[], s
 }
 
 /**
- * Inyecta recursos de energía en los sistemas de power
+ * Injects power resources into power systems
  */
 function injectPowerResources(systems: any[], inventory: ApiInventory[], sensors: ApiSensor[]): any[] {
   const enrichedSystems = [...systems];
 
-  // Buscar sensores de potencia
+  // Find power sensors
   const powerSensors = sensors.filter(s => s.category === 'POWER');
 
   if (powerSensors.length > 0) {
     const distributionSystem = enrichedSystems.find(s => s.id === 'distribution');
     if (distributionSystem) {
+      // Get existing IDs to avoid duplicates
+      const existingIds = new Set(
+        distributionSystem.subsystems.map((sub: any) => sub.id)
+      );
+      
       powerSensors.forEach(sensor => {
-        distributionSystem.subsystems.push({
-          id: `power-sensor-${sensor.id}`,
-          name: sensor.name,
-          commanderControl: createSensorProgressControl(sensor),
-        });
+        const subsystemId = `power-sensor-${sensor.id}`;
+        // Only add if it doesn't already exist
+        if (!existingIds.has(subsystemId)) {
+          distributionSystem.subsystems.push({
+            id: subsystemId,
+            name: sensor.name,
+            commanderControl: createSensorProgressControl(sensor),
+          });
+          existingIds.add(subsystemId);
+        }
       });
     }
   }
@@ -180,12 +185,12 @@ function injectPowerResources(systems: any[], inventory: ApiInventory[], sensors
 }
 
 /**
- * Inyecta recursos de suministros
+ * Injects supply resources
  */
 function injectSupplyResources(systems: any[], inventory: ApiInventory[]): any[] {
   const enrichedSystems = [...systems];
 
-  // Buscar recursos de comida y suministros
+  // Find food and supply resources
   const foodResources = inventory.filter(inv => 
     inv.resources.subcategory === 'FOOD' || 
     inv.resources.code.includes('FOOD')
@@ -194,12 +199,22 @@ function injectSupplyResources(systems: any[], inventory: ApiInventory[]): any[]
   if (foodResources.length > 0) {
     const agricultureSystem = enrichedSystems.find(s => s.id === 'agriculture');
     if (agricultureSystem) {
+      // Get existing IDs to avoid duplicates
+      const existingIds = new Set(
+        agricultureSystem.subsystems.map((sub: any) => sub.id)
+      );
+      
       foodResources.forEach(resource => {
-        agricultureSystem.subsystems.push({
-          id: `food-${resource.resource_id}`,
-          name: `${resource.resources.name} Stock`,
-          commanderControl: createResourceProgressControl(resource),
-        });
+        const subsystemId = `food-${resource.resource_id}`;
+        // Only add if it doesn't already exist
+        if (!existingIds.has(subsystemId)) {
+          agricultureSystem.subsystems.push({
+            id: subsystemId,
+            name: `${resource.resources.name} Stock`,
+            commanderControl: createResourceProgressControl(resource),
+          });
+          existingIds.add(subsystemId);
+        }
       });
     }
   }
@@ -208,7 +223,7 @@ function injectSupplyResources(systems: any[], inventory: ApiInventory[]): any[]
 }
 
 /**
- * Crea un control de tipo progress-bar para un recurso
+ * Creates a progress-bar type control for a resource
  */
 function createResourceProgressControl(inventory: ApiInventory): Control {
   const status = calculateResourceStatus(
@@ -227,14 +242,14 @@ function createResourceProgressControl(inventory: ApiInventory): Control {
     max: inventory.max_threshold,
     unit: inventory.resources.unit,
     status,
-    locked: true, // Los recursos son read-only
+    locked: true, // Resources are read-only
     critical: inventory.resources.is_vital,
     requiresConfirmation: false,
   };
 }
 
 /**
- * Crea un control de tipo progress-bar para un sensor
+ * Creates a progress-bar type control for a sensor
  */
 function createSensorProgressControl(sensor: ApiSensor): Control {
   const metadata = sensor.metadata || {};
@@ -246,7 +261,7 @@ function createSensorProgressControl(sensor: ApiSensor): Control {
     label: sensor.name,
     description: `Monitoring ${sensor.category}`,
     type: 'progress-bar',
-    value: 0, // Se actualizará con telemetría
+    value: 0, // Will be updated with telemetry
     min,
     max,
     unit: sensor.unit,
@@ -258,7 +273,7 @@ function createSensorProgressControl(sensor: ApiSensor): Control {
 }
 
 /**
- * Calcula el status del soporte vital
+ * Calculates life support status
  */
 function calculateLifeSupportStatus(vitalResources: ApiInventory[]): { value: string; status: AlertStatus } {
   if (vitalResources.length === 0) {
@@ -287,7 +302,7 @@ function calculateLifeSupportStatus(vitalResources: ApiInventory[]): { value: st
 }
 
 /**
- * Calcula el status de suministros
+ * Calculates supplies status
  */
 function calculateSuppliesStatus(inventory: ApiInventory[]): { value: string; status: AlertStatus } {
   if (inventory.length === 0) {
@@ -316,16 +331,16 @@ function calculateSuppliesStatus(inventory: ApiInventory[]): { value: string; st
 }
 
 /**
- * Calcula el status de potencia
+ * Calculates power status
  */
 function calculatePowerStatus(sensors: ApiSensor[]): { value: string; status: AlertStatus } {
-  // Por ahora retornamos un valor por defecto
-  // Se actualizará con telemetría en tiempo real
+  // For now we return a default value
+  // Will be updated with real-time telemetry
   return { value: '450kW', status: 'ok' };
 }
 
 /**
- * Calcula el status general de una categoría basado en sus sistemas
+ * Calculates overall category status based on its systems
  */
 function calculateCategoryStatus(systems: any[]): AlertStatus {
   let hasCritical = false;
@@ -341,22 +356,18 @@ function calculateCategoryStatus(systems: any[]): AlertStatus {
   return 'ok';
 }
 
-/**
- * Obtiene la posición por defecto de un domo basado en su código
- */
 function getDefaultDomePosition(code: string): { x: number; y: number } {
-  // Mapeo simple basado en el código
   const positions: Record<string, { x: number; y: number }> = {
-    'DOME_ALPHA': { x: 35, y: 45 },
-    'DOME_BETA': { x: 60, y: 55 },
-    'DOME_GAMMA': { x: 45, y: 70 },
+    'DOME_CHARLIE': { x: 20, y: 25 },
+    'DOME_ALPHA': { x: 75, y: 30 },
+    'DOME_BRAVO': { x: 45, y: 70 },
   };
 
   return positions[code] || { x: 50, y: 50 };
 }
 
 /**
- * Calcula la población estimada basada en el tipo de domo
+ * Calculates estimated population based on dome type
  */
 function calculatePopulation(domeType: string): number {
   const populations: Record<string, number> = {
@@ -370,7 +381,7 @@ function calculatePopulation(domeType: string): number {
 }
 
 /**
- * Exporta las categorías por defecto para uso en otros lugares
+ * Exports default categories for use elsewhere
  */
 export { defaultCategories };
 

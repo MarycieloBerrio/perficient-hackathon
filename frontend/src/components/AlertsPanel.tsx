@@ -1,4 +1,4 @@
-// Panel para mostrar y gestionar alertas activas de la colonia
+// Panel to display and manage active colony alerts
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import { AlertTriangle, X, CheckCircle, Info, Bell } from 'lucide-react';
@@ -17,9 +17,9 @@ export function AlertsPanel({ isOpen, onClose }: AlertsPanelProps) {
   const handleAcknowledge = async (alertId: string) => {
     try {
       setAcknowledging(alertId);
-      await acknowledgeAlert(alertId, 'OPERATOR-001'); // TODO: usar operador real
+      await acknowledgeAlert(alertId, 'OPERATOR-001'); // TODO: use real operator
     } catch (err) {
-      console.error('Error al acknowledging alerta:', err);
+      console.error('Error acknowledging alert:', err);
     } finally {
       setAcknowledging(null);
     }
@@ -48,7 +48,7 @@ export function AlertsPanel({ isOpen, onClose }: AlertsPanelProps) {
   };
 
   const getDomeName = (domeId: string | null) => {
-    if (!domeId) return 'Sistema Global';
+    if (!domeId) return 'Global System';
     const dome = domes.find(d => d.id === domeId);
     return dome?.name || domeId;
   };
@@ -75,9 +75,9 @@ export function AlertsPanel({ isOpen, onClose }: AlertsPanelProps) {
               <Bell className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold text-foreground">Alertas Activas</h2>
+              <h2 className="text-2xl font-semibold text-foreground">Active Alerts</h2>
               <p className="text-sm text-gray-400">
-                {activeAlerts.length} alerta{activeAlerts.length !== 1 ? 's' : ''} pendiente{activeAlerts.length !== 1 ? 's' : ''}
+                {activeAlerts.length} pending alert{activeAlerts.length !== 1 ? 's' : ''}
               </p>
             </div>
           </div>
@@ -91,11 +91,11 @@ export function AlertsPanel({ isOpen, onClose }: AlertsPanelProps) {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Alertas activas */}
+          {/* Active alerts */}
           {activeAlerts.length > 0 ? (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
-                Requieren Atención
+                Requires Attention
               </h3>
               {activeAlerts.map(alert => (
                 <AlertCard
@@ -113,19 +113,19 @@ export function AlertsPanel({ isOpen, onClose }: AlertsPanelProps) {
             <div className="text-center py-12">
               <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4 opacity-50" />
               <h3 className="text-xl font-semibold mb-2 text-foreground">
-                No hay alertas activas
+                No active alerts
               </h3>
               <p className="text-sm text-gray-400">
-                Todos los sistemas están operando normalmente
+                All systems are operating normally
               </p>
             </div>
           )}
 
-          {/* Alertas acknowledged */}
+          {/* Acknowledged alerts */}
           {acknowledgedAlerts.length > 0 && (
             <div className="space-y-3 pt-6 border-t border-mars-border">
               <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
-                Reconocidas
+                Acknowledged
               </h3>
               {acknowledgedAlerts.map(alert => (
                 <AlertCard
@@ -198,7 +198,7 @@ function AlertCard({
 
           {/* Details */}
           <div className="flex items-center gap-4 text-xs text-gray-400 mb-3">
-            <span>Código: {alert.code}</span>
+            <span>Code: {alert.code}</span>
             <span>•</span>
             <span>{timeAgo}</span>
           </div>
@@ -214,13 +214,13 @@ function AlertCard({
                 isAcknowledging && 'opacity-50 cursor-not-allowed'
               )}
             >
-              {isAcknowledging ? 'Reconociendo...' : 'Reconocer Alerta'}
+              {isAcknowledging ? 'Acknowledging...' : 'Acknowledge Alert'}
             </button>
           )}
 
           {isAcknowledged && alert.acknowledged_by && (
             <div className="text-xs text-gray-500">
-              Reconocida por {alert.acknowledged_by}
+              Acknowledged by {alert.acknowledged_by}
             </div>
           )}
         </div>
@@ -236,9 +236,9 @@ function getTimeAgo(date: Date): string {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'Ahora';
-  if (diffMins < 60) return `Hace ${diffMins} min`;
-  if (diffHours < 24) return `Hace ${diffHours}h`;
-  return `Hace ${diffDays}d`;
+  if (diffMins < 1) return 'Now';
+  if (diffMins < 60) return `${diffMins} min ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  return `${diffDays}d ago`;
 }
 

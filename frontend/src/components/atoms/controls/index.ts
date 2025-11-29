@@ -1,4 +1,4 @@
-// Exportar todos los controles para facilitar la importación
+// Export all controls to facilitate imports
 export { SliderControl } from './SliderControl';
 export { ToggleSafetySwitch } from './ToggleSafetySwitch';
 export { KnobControl } from './KnobControl';
