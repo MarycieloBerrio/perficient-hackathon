@@ -11,7 +11,7 @@ RUN npm install
 COPY . .
 
 # 3) Construir la app estática
-RUN npm run build
+RUN npm run build:docker
 
 
 # ---------- Stage 2: runtime (servidor estático con nginx) ----------
